@@ -112,6 +112,7 @@ func (db *Database) set(parts []string) string {
 		if err != nil {
 			return "-ERR invalid expiration time\r\n"
 		}
+		db.expiry[key] = time.Now().Add(time.Second * time.Duration(expireTime))
 		// Set expiration time using a goroutine
 		go func(key string, expireTime int) {
 			<-time.After(time.Duration(expireTime) * time.Second)

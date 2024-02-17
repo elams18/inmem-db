@@ -5,14 +5,14 @@ Simple version of a in memory key value store using the RESP (REdis Serializatio
 
 Following commands are to be implemented:
 
-1. GET
-2. DEL
-3. EXPIRE
-4. KEYS
-5. SET
-6. TTL
-7. ZADD
-8. ZRANGE
+1. GET - DONE
+2. DEL - DONE
+3. EXPIRE - DONE
+4. KEYS - DONE ( has a bug)
+5. SET - DONE
+6. TTL - DONE
+7. ZADD - WIP
+8. ZRANGE - WIP
  
 The implementation should follow the redis command standard. For example, for SET, it
 is at: https://redis.io/commands/set
@@ -30,4 +30,4 @@ is at: https://redis.io/commands/set
     1. Create a simple database with interface and expiry to handle TTL and EXPIRE and sortedSet for ZADD
 
 
-#### v0 -> Implemented basic SET, GET, EXPIRE, KEYS
+#### v0 -> Implemented basic SET, GET, EXPIRE, KEYS, TTL
