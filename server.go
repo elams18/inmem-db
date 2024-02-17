@@ -210,13 +210,72 @@ func (db *Database) ttl(parts []string) string {
 }
 
 func (db *Database) zadd(parts []string) string {
-	// Implementation for ZADD command
-	return "-ERR ZADD command is not implemented yet\r\n"
+	if len(parts) < 4 || (len(parts)-2)%2 != 0 {
+		return "-ERR wrong number of arguments for 'ZADD' command\r\n"
+	}
+
+	key := parts[1]
+	set, ok := db.sortedSet[key]
+	if !ok {
+		set = make(map[string]float64)
+		db.sortedSet[key] = set
+	}
+
+	count := 0
+	for i := 2; i < len(parts); i += 2 {
+		score, err := strconv.ParseFloat(parts[i], 64)
+		if err != nil {
+			return "-ERR invalid score\r\n"
+		}
+		member := parts[i+1]
+		set[member] = score
+		count++
+	}
+
+	return fmt.Sprintf(":%d\r\n", count)
 }
 
 func (db *Database) zrange(parts []string) string {
-	// Implementation for ZRANGE command
-	return "-ERR ZRANGE command is not implemented yet\r\n"
+	if len(parts) < 4 {
+		return "-ERR wrong number of arguments for 'ZRANGE' command\r\n"
+	}
+
+	key := parts[1]
+	set, ok := db.sortedSet[key]
+	if !ok {
+		return "-1\r\n" // Key not found
+	}
+
+	start, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return "-ERR invalid start index\r\n"
+	}
+	end, err := strconv.Atoi(parts[3])
+	if err != nil {
+		return "-ERR invalid end index\r\n"
+	}
+
+	if start < 0 {
+		start = len(set) + start
+	}
+	if end < 0 {
+		end = len(set) + end
+	}
+
+	if start > end || start >= len(set) {
+		return "-1\r\n" // No elements in range
+	}
+
+	var response strings.Builder
+	count := 0
+	for member, score := range set {
+		if count >= start && count <= end {
+			response.WriteString(fmt.Sprintf("%s\r\n", member))
+			response.WriteString(fmt.Sprintf("%.0f\r\n", score))
+		}
+		count++
+	}
+	return response.String()
 }
 
 func (db *Database) expired(key string) bool {

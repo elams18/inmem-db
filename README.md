@@ -11,8 +11,8 @@ Following commands are to be implemented:
 4. KEYS - DONE ( has a bug)
 5. SET - DONE
 6. TTL - DONE
-7. ZADD - WIP
-8. ZRANGE - WIP
+7. ZADD - WIP ( has some parameter issues )
+8. ZRANGE - WIP ( has a bug )
  
 The implementation should follow the redis command standard. For example, for SET, it
 is at: https://redis.io/commands/set
@@ -23,11 +23,7 @@ is at: https://redis.io/commands/set
 * The client connects to the server and sends commands for operations like getting, setting, deleting keys, setting expiration, and retrieving keys.
 * The server processes the commands and sends back appropriate responses.
 
-### To implement RESP Protocol:
-    1. Used bufio package to create a reader and writer instance to parse the string starting with "$" and add the values and end the statement with "\r\n"
+#### Concenns -
+* 
 
-### Create a database:
-    1. Create a simple database with interface and expiry to handle TTL and EXPIRE and sortedSet for ZADD
-
-
-#### v0 -> Implemented basic SET, GET, EXPIRE, KEYS, TTL
+#### v0 -> Implemented basic SET, GET, EXPIRE, KEYS, TTL, ZADD, ZRANGE
