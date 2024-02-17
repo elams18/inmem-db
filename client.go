@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -20,16 +21,24 @@ func main() {
 
 	for {
 		fmt.Print("> ")
-		cmd, _ := reader.ReadString('\n')
-		cmd = cmd[:len(cmd)-1] // remove newline character
-		writer.WriteString(cmd + "\r\n")
-		writer.Flush()
+		cmd, _ := reader.ReadString('\n') // Read input from user
+		fmt.Fprint(writer, cmd)           // Send command to server
+		writer.WriteString("\r\n")        // Add newline after the command
+		writer.Flush()                    // Flush writer to send data immediately
 
+		// Read the response from the server
 		response, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
 			fmt.Println("Error reading response:", err)
 			return
 		}
-		fmt.Println(response)
+
+		// Print the response
+		fmt.Print(response)
+
+		// Check if the response indicates end of data (-1)
+		if strings.TrimSpace(response) == "-1\r\n" {
+			break
+		}
 	}
 }
