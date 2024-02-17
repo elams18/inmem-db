@@ -30,4 +30,4 @@ is at: https://redis.io/commands/set
     1. Create a simple database with interface and expiry to handle TTL and EXPIRE and sortedSet for ZADD
 
 
-#### v0 -> Implemented basic SET and GET implementation
+#### v0 -> Implemented basic SET, GET, EXPIRE, KEYS
