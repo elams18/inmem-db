@@ -13,7 +13,7 @@ func printResponse(conn net.Conn) {
 
 	for scanner.Scan() {
 		response := scanner.Text()
-		if strings.HasPrefix(response, "-ERR Empty command") {
+		if strings.HasPrefix(response, "-ERR Empty Command") {
 			return
 		}
 		fmt.Println(response)

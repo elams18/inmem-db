@@ -23,7 +23,7 @@ is at: https://redis.io/commands/set
 * The client connects to the server and sends commands for operations like getting, setting, deleting keys, setting expiration, and retrieving keys.
 * The server processes the commands and sends back appropriate responses.
 
-#### Concenns -
+#### Concerns -
 * Added -1 marking as End of response which needs to be taken care of.
 * Multiple client trying to modify the data - **Used Mutex Lock to take care of this**
 * For Complex data structures, this may not work as expected.

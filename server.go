@@ -29,7 +29,7 @@ func NewDatabase() *Database {
 func (db *Database) handleCommand(command string) string {
 	parts := strings.Fields(command)
 	if len(parts) == 0 {
-		return "-ERR Empty command\r\n"
+		return errorResponse("Empty Command")
 	}
 
 	switch strings.ToUpper(parts[0]) {
@@ -43,7 +43,7 @@ func (db *Database) handleCommand(command string) string {
 		return db.expire(parts)
 	case "KEYS":
 		if len(parts) != 2 {
-			return "-ERR wrong number of arguments for 'KEYS' command\r\n"
+			return errorResponse("wrong number of arguments for 'KEYS' command")
 		}
 		keys := db.keys(parts[1])
 		if keys == "-1\r\n" {
@@ -86,7 +86,7 @@ func splitCommand(cmd string) []string {
 
 func (db *Database) get(parts []string) string {
 	if len(parts) != 2 {
-		return "-ERR wrong number of arguments for 'GET' command\r\n"
+		return errorResponse("wrong number of arguments for 'GET' command")
 	}
 	value, ok := db.data[parts[1]]
 	if !ok {
@@ -104,7 +104,7 @@ func (db *Database) get(parts []string) string {
 
 func (db *Database) set(parts []string) string {
 	if len(parts) != 3 && len(parts) != 5 {
-		return "-ERR wrong number of arguments for 'SET' command\r\n"
+		return errorResponse("wrong number of arguments for 'SET' command")
 	}
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -114,7 +114,7 @@ func (db *Database) set(parts []string) string {
 	if len(parts) >= 5 && strings.ToUpper(parts[3]) == "EX" {
 		expireTime, err := strconv.Atoi(parts[4])
 		if err != nil {
-			return "-ERR invalid expiration time\r\n"
+			return errorResponse("Invalid expiration time")
 		}
 		db.expiry[key] = time.Now().Add(time.Second * time.Duration(expireTime))
 		// Set expiration time using a goroutine
@@ -128,7 +128,7 @@ func (db *Database) set(parts []string) string {
 
 func (db *Database) del(parts []string) string {
 	if len(parts) < 2 {
-		return "-ERR wrong number of arguments for 'DEL' command\r\n"
+		return errorResponse("Wrong number of arguments for 'DEL' command")
 	}
 	count := 0
 	for i := 1; i < len(parts); i++ {
@@ -142,7 +142,7 @@ func (db *Database) del(parts []string) string {
 
 func (db *Database) expire(parts []string) string {
 	if len(parts) != 3 {
-		return "-ERR wrong number of arguments for 'EXPIRE' command\r\n"
+		return errorResponse("wrong number of arguments for 'EXPIRE' command")
 	}
 	key := parts[1]
 	expiry, err := strconv.Atoi(parts[2])
@@ -201,7 +201,7 @@ func (db *Database) keys(pattern string) string {
 
 func (db *Database) ttl(parts []string) string {
 	if len(parts) != 2 {
-		return "-ERR wrong number of arguments for 'TTL' command\r\n"
+		return errorResponse("wrong number of arguments for 'TTL' command")
 	}
 	key := parts[1]
 	if expiry, ok := db.expiry[key]; ok {
@@ -215,7 +215,7 @@ func (db *Database) ttl(parts []string) string {
 
 func (db *Database) zadd(parts []string) string {
 	if len(parts) < 4 || (len(parts)-2)%2 != 0 {
-		return "-ERR wrong number of arguments for 'ZADD' command\r\n"
+		return errorResponse(" wrong number of arguments for 'ZADD' command")
 	}
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -243,7 +243,7 @@ func (db *Database) zadd(parts []string) string {
 
 func (db *Database) zrange(parts []string) string {
 	if len(parts) < 4 {
-		return "-ERR wrong number of arguments for 'ZRANGE' command\r\n"
+		return errorResponse(" wrong number of arguments for 'ZRANGE' command")
 	}
 
 	key := parts[1]
@@ -312,6 +312,10 @@ func handleConnection(conn net.Conn, db *Database) {
 		writer.WriteString(response)
 		writer.Flush()
 	}
+}
+
+func errorResponse(message string) string {
+	return "-ERR " + message + "\r\n"
 }
 
 func main() {
