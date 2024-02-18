@@ -8,13 +8,41 @@ import (
 	"strings"
 )
 
+func printResponse(conn net.Conn) {
+	scanner := bufio.NewScanner(conn)
+
+	for scanner.Scan() {
+		response := scanner.Text()
+		if strings.HasPrefix(response, "-ERR Empty command") {
+			return
+		}
+		fmt.Println(response)
+
+		// Check if the response indicates end of data (-1)
+		if response == "-1" || strings.HasPrefix(response, "-ERR") {
+			//fmt.Println("End of response")
+			return
+		}
+
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading response:", err)
+	}
+}
+
 func main() {
 	conn, err := net.Dial("tcp", "localhost:6379")
 	if err != nil {
 		fmt.Println("Error connecting to server:", err)
 		return
 	}
-	defer conn.Close()
+	defer func(conn net.Conn) {
+		err := conn.Close()
+		if err != nil {
+			fmt.Println("Error closing connection", err)
+		}
+	}(conn)
 
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(conn)
@@ -22,78 +50,23 @@ func main() {
 	for {
 		fmt.Print("> ")
 		cmd, _ := reader.ReadString('\n') // Read input from user
-		cmd = strings.TrimSpace(cmd)
-
-		// Send command to server
-		fmt.Fprintln(writer, cmd)
-		writer.Flush()
-
-		// Read and print response from the server
-		printResponse(conn)
-	}
-}
-
-func printResponse(conn net.Conn) {
-	reader := bufio.NewReader(conn)
-
-	for {
-		response, err := reader.ReadString('\n')
+		_, err := fmt.Fprint(writer, cmd)
 		if err != nil {
-			fmt.Println("Error reading response:", err)
+			fmt.Println("Error from server", err)
 			return
-		}
-
-		// Trim whitespace and newlines
-		response = strings.TrimSpace(response)
-
-		// Check if the response indicates end of data (-1)
-		if response == "-1" {
-			fmt.Println("End of response")
+		} // Send command to server
+		_, err = writer.WriteString("\r\n")
+		if err != nil {
+			fmt.Println("Error: ", err)
 			return
-		}
-
-		// Check if the response has a prefix character indicating response type
-		if len(response) >= 1 {
-			switch response[0] {
-			case '+', '-', ':':
-				// Single-line response, print and exit loop
-				fmt.Println(response)
-				return
-			case '$':
-				// Handle quoted strings for bulk responses
-				if strings.HasPrefix(response, "$\"") && strings.HasSuffix(response, "\"") {
-					// Extract the quoted string value
-					value := response[2 : len(response)-1]
-					fmt.Println(value)
-				} else {
-					fmt.Println("Unexpected response format:", response)
-				}
-				return
-			case '*':
-				// Multi-line response, print and continue loop
-				fmt.Println(response)
-				for {
-					// Read additional lines of multi-line response
-					line, err := reader.ReadString('\n')
-					if err != nil {
-						fmt.Println("Error reading additional response line:", err)
-						return
-					}
-					line = strings.TrimSpace(line)
-					fmt.Println(line)
-					if line == "-1" {
-						return // End of multi-line response
-					}
-				}
-			default:
-				// Unexpected response type, print and exit loop
-				fmt.Println("Unexpected response:", response)
-				return
-			}
-		} else {
-			// Unexpected response format, print and exit loop
-			fmt.Println("Unexpected response format:", response)
+		} // Add newline after the command
+		err = writer.Flush()
+		if err != nil {
+			fmt.Println(err)
 			return
-		}
+		} // Flush writer to send data immediately
+
+		// Print the response
+		printResponse(conn)
 	}
 }

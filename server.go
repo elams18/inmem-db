@@ -7,6 +7,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -14,6 +15,7 @@ type Database struct {
 	data      map[string]string
 	expiry    map[string]time.Time
 	sortedSet map[string]map[string]float64
+	mu        sync.Mutex
 }
 
 func NewDatabase() *Database {
@@ -97,13 +99,15 @@ func (db *Database) get(parts []string) string {
 		delete(db.expiry, key) // Remove the expiration time entry
 		return "$-1\r\n"       // Key has expired
 	}
-	return fmt.Sprintf("%s\r\n", value)
+	return fmt.Sprintf("$%s\r\n", value)
 }
 
 func (db *Database) set(parts []string) string {
 	if len(parts) != 3 && len(parts) != 5 {
 		return "-ERR wrong number of arguments for 'SET' command\r\n"
 	}
+	db.mu.Lock()
+	defer db.mu.Unlock()
 	key := parts[1]
 	value := parts[2]
 	db.data[key] = value
@@ -213,6 +217,8 @@ func (db *Database) zadd(parts []string) string {
 	if len(parts) < 4 || (len(parts)-2)%2 != 0 {
 		return "-ERR wrong number of arguments for 'ZADD' command\r\n"
 	}
+	db.mu.Lock()
+	defer db.mu.Unlock()
 
 	key := parts[1]
 	set, ok := db.sortedSet[key]
